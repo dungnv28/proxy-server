@@ -37,19 +37,17 @@ if [[ -e /etc/sockd.conf ]]; then
 		echo "	1) Xem danh sách proxy hiện có"
 		echo "	2) Thêm một proxy user mới"
 		echo "	3) Xóa một proxy user"
-		echo "	4) Xóa toàn bộ cấu hình server proxy"
+		echo "	4) Xóa toàn bộ proxy user"
 		echo "	5) Thay đổi giới hạn tốc độ proxy"
-		echo "	6) Exit"
+		echo "	6) Xóa toàn bộ cấu hình server proxy & user"
+		echo "	7) Exit"
 		read -p "Select an option [1-4]: " option
 		case $option in
 			1)
 				echo "Current proxy list:"
 				
-				# Trích xuất các user có trong hệ thống được cấu hình cho Dante Proxy
-				grep 'user.unprivileged' /etc/sockd.conf > /dev/null 2>&1
-				
 				# Hiển thị danh sách người dùng được thêm vào hệ thống cho proxy
-				awk -F: '/\/usr\/sbin\/nologin/ {print $1}' /etc/passwd
+				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd
 				echo " "
 				;;
 			2)
@@ -94,6 +92,57 @@ if [[ -e /etc/sockd.conf ]]; then
 				exit
 				;;
 			4)
+				# In danh sách người dùng có UID > 1000, sử dụng shell /usr/sbin/nologin, trừ người dùng 'nobody'
+				echo "The following users have UID > 1000, use /usr/sbin/nologin, and will be deleted (excluding 'nobody'):"
+
+				# Liệt kê các người dùng có UID > 1000, shell /usr/sbin/nologin, trừ 'nobody'
+				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd
+
+				# Xác nhận lại trước khi xóa
+				read -p "Are you sure you want to delete these users? [y/N]: " confirmation
+				if [[ "$confirmation" != "y" ]]; then
+				echo "Operation cancelled."
+				exit 0
+				fi
+
+				# Xóa người dùng có UID > 1000, shell /usr/sbin/nologin, trừ người dùng 'nobody'
+				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd | while read -r user; do
+				userdel -r "$user"
+				echo "Deleted user: $user"
+				done
+
+				echo "All specified users have been deleted."
+			5)
+				# Lấy thông tin tốc độ hiện tại
+				current_limit=$(tc class show dev $interface | grep "class htb 1:1" | awk '{print $5}')
+
+				# Nếu không có tốc độ hiện tại, gán giá trị mặc định
+				if [[ -z "$current_limit" ]]; then
+					echo "No current speed limit found."
+				else
+					echo "Current proxy speed limit is: $current_limit"
+				fi
+
+				# Nhập tốc độ giới hạn mới
+				echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
+				read -p "New limit: " newlimit
+
+				# Xóa cấu hình traffic control hiện tại
+				tc qdisc del dev $interface root
+
+				# Thiết lập traffic control với giới hạn mới
+				tc qdisc add dev $interface root handle 1: htb default 30
+				tc class add dev $interface parent 1: classid 1:1 htb rate ${newlimit}mbit ceil ${newlimit}mbit
+				tc class add dev $interface parent 1:1 classid 1:30 htb rate ${newlimit}mbit ceil ${newlimit}mbit
+
+				# Áp dụng bộ lọc cho traffic control
+				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
+				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
+
+				# Thông báo giới hạn mới đã được áp dụng
+				echo "Traffic limit updated to ${newlimit}Mbps"
+				;;
+			6)
 				echo " "
 				read -p "Do you really want to remove Dante socks proxy server? [y/n]: " -e -i n REMOVE
 				if [[ "$REMOVE" = 'y' ]]; then
@@ -130,28 +179,16 @@ if [[ -e /etc/sockd.conf ]]; then
 					echo " "
 					echo "Removal process aborted!"
 				fi
+
+				# Xóa người dùng có UID > 1000, shell /usr/sbin/nologin, trừ người dùng 'nobody'
+				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd | while read -r user; do
+				userdel -r "$user"
+				echo "Deleted user: $user"
+				done
+
 				exit
 				;;
-			5)
-				# Change proxy speed limit
-				echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
-				read -p "New limit: " newlimit
-
-				# Remove existing traffic control settings
-				tc qdisc del dev $interface root
-
-				# Apply new traffic control settings with the specified limit
-				tc qdisc add dev $interface root handle 1: htb default 30
-				tc class add dev $interface parent 1: classid 1:1 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-				tc class add dev $interface parent 1:1 classid 1:30 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-
-				# Apply filter for traffic control
-				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
-				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
-
-				echo "Traffic limit updated to ${newlimit}Mbps"
-				;;
-			6)
+			7)
 				# Just exit this script
 				exit
 				;;
