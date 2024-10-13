@@ -195,10 +195,10 @@ if [[ -e /etc/sockd.conf ]]; then
 				userdel -r "$user"
 				echo "Deleted user: $user"
 				done
-				;;
 				
 				echo " "				
                 read -p "Press Enter to return to menu..."
+				;;
 			7)
 				# Just exit this script
                 echo "Exiting..."
