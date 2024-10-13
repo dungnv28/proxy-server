@@ -112,6 +112,7 @@ if [[ -e /etc/sockd.conf ]]; then
 				done
 
 				echo "All specified users have been deleted."
+				;;
 			5)
 				# Lấy thông tin tốc độ hiện tại
 				current_limit=$(tc class show dev $interface | grep "class htb 1:1" | awk '{print $5}')
