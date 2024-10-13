@@ -416,6 +416,15 @@ else
 		done
 	}
 
+	
+	install_zip_jq() {
+		# install zip
+		sudo apt-get install zip -y
+
+		# install jq
+		sudo apt-get install jq -y
+	}
+
 	# Nén tệp proxy và upload lên download server
 	upload_2file() {
 		local PASS=$(openssl rand -base64 12)  # Tạo mật khẩu ngẫu nhiên
@@ -441,7 +450,7 @@ else
 
 	# Tạo và upload tệp proxy
 	gen_proxy_file_for_user
-	upload_2file
+	install_zip_jq && upload_2file
 
 	# Print success message
 	echo "All Done and Success by ThienTranJP"
