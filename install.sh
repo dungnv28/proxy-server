@@ -27,6 +27,16 @@ else
 	exit 3
 fi
 
+# Obtaining name for system LAN interface
+interface="$(ip -o -4 route show to default | awk '{print $5}')"
+# Kiểm tra xem giao diện có tồn tại không
+if [[ -n "$interface" && -d "/sys/class/net/$interface" ]]; then
+	echo "Interface $interface exists."
+else
+	echo "Interface does not exist."
+fi
+
+
 # Checking for previous installation with this script
 if [[ -e /etc/sockd.conf ]]; then
     while : ; do
@@ -121,6 +131,7 @@ if [[ -e /etc/sockd.conf ]]; then
 				read -p "Press Enter to return to menu..."
 				;;
 			5)
+				
 				# Lấy thông tin tốc độ hiện tại
 				current_limit=$(tc class show dev $interface | grep "class htb 1:1" | awk '{print $5}')
 
@@ -208,8 +219,7 @@ if [[ -e /etc/sockd.conf ]]; then
 	done
 else
 	clear
-	# Obtaining name for system LAN interface
-	interface="$(ip -o -4 route show to default | awk '{print $5}')"
+
 	# Kiểm tra nếu người dùng nhập vào port hợp lệ
 	while true; do
 		read -p "Please enter the port number for our proxy server:  " -e -i 1080 port
