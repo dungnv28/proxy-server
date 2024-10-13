@@ -51,7 +51,7 @@ if [[ -e /etc/sockd.conf ]]; then
 				echo " "
 				
 				# Dừng lại cho tới khi người dùng nhấn Enter để tiếp tục
-				read -p "Press Enter to continue..."
+                read -p "Press Enter to return to menu..."
 				;;
 			2)
 				# Creating new user for proxy
@@ -80,6 +80,8 @@ if [[ -e /etc/sockd.conf ]]; then
 				useradd -M -s /usr/sbin/nologin -p "$(openssl passwd -1 "$passwordnew")" "$usernew"
 				echo " "
 				echo "New user added!"
+				echo " "
+                read -p "Press Enter to return to menu..."
 				;;
 			3)
 				# Deleting an existing user
@@ -91,6 +93,8 @@ if [[ -e /etc/sockd.conf ]]; then
 				else
 					echo "Cannot find user with this name!"
 				fi
+				echo " "
+                read -p "Press Enter to return to menu..."
 				;;
 			4)
 				# In danh sách người dùng có UID > 1000, sử dụng shell /usr/sbin/nologin, trừ người dùng 'nobody'
@@ -113,6 +117,8 @@ if [[ -e /etc/sockd.conf ]]; then
 				done
 
 				echo "All specified users have been deleted."
+				echo " "
+                read -p "Press Enter to return to menu..."
 				;;
 			5)
 				# Lấy thông tin tốc độ hiện tại
@@ -143,6 +149,8 @@ if [[ -e /etc/sockd.conf ]]; then
 
 				# Thông báo giới hạn mới đã được áp dụng
 				echo "Traffic limit updated to ${newlimit}Mbps"
+				echo " "
+                read -p "Press Enter to return to menu..."
 				;;
 			6)
 				echo " "
@@ -188,9 +196,13 @@ if [[ -e /etc/sockd.conf ]]; then
 				echo "Deleted user: $user"
 				done
 				;;
+				
+				echo " "				
+                read -p "Press Enter to return to menu..."
 			7)
 				# Just exit this script
-				exit
+                echo "Exiting..."
+				exit 0
 				;;
 		esac
 	done
