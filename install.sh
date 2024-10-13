@@ -407,14 +407,43 @@ else
 	# In ra thông báo xác nhận giới hạn băng thông đã được thiết lập
 	echo "Traffic control applied, limiting to ${limit}Mbps for upload and download"
 
+	# Tạo tệp proxy với định dạng IP:PORT:LOGIN:PASS
+	gen_proxy_file_for_user() {
+		# Sử dụng một vòng lặp thông thường và redirect đầu ra vào tệp proxy.txt
+		> proxy.txt  # Tạo hoặc làm trống tệp proxy.txt nếu nó đã tồn tại
+		for i in $(seq 1 $numofproxy); do
+			echo "$hostname:$port:${user[$i]}:${password[$i]}" >> proxy.txt
+		done
+	}
+
+	# Nén tệp proxy và upload lên download server
+	upload_2file() {
+		local PASS=$(openssl rand -base64 12)  # Tạo mật khẩu ngẫu nhiên
+		zip --password "$PASS" proxy.zip proxy.txt
+		JSON=$(curl -F "file=@proxy.zip" https://file.io)
+		URL=$(echo "$JSON" | jq --raw-output '.link')
+
+		echo "Proxy is ready! Format IP:PORT:LOGIN:PASS"
+		echo "Download zip archive from: ${URL}"
+		echo "Password: ${PASS}"
+	}
+
+	# Sau khi tạo người dùng proxy xong
+
 	# Output proxy list to console
 	hostname=$(hostname -I | awk '{print $1}')
+	echo "Proxy list (IP:PORT:LOGIN:PASS):"
 	for i in $(seq 1 $numofproxy); do
 		if [[ -n "${user[$i]}" ]]; then
 			echo "$hostname:$port:${user[$i]}:${password[$i]}"
 		fi
 	done
 
+	# Tạo và upload tệp proxy
+	gen_proxy_file_for_user
+	upload_2file
+
 	# Print success message
 	echo "All Done and Success by ThienTranJP"
+
 fi
