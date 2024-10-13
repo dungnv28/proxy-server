@@ -48,10 +48,10 @@ if [[ -e /etc/sockd.conf ]]; then
 				
 				# Hiển thị danh sách người dùng được thêm vào hệ thống cho proxy
 				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd
-				echo " "
 				
 				# Dừng lại cho tới khi người dùng nhấn Enter để tiếp tục
-                read -p "Press Enter to return to menu..."
+				echo " "
+				read -p "Press Enter to return to menu..."
 				;;
 			2)
 				# Creating new user for proxy
@@ -81,7 +81,7 @@ if [[ -e /etc/sockd.conf ]]; then
 				echo " "
 				echo "New user added!"
 				echo " "
-                read -p "Press Enter to return to menu..."
+				read -p "Press Enter to return to menu..."
 				;;
 			3)
 				# Deleting an existing user
@@ -94,7 +94,7 @@ if [[ -e /etc/sockd.conf ]]; then
 					echo "Cannot find user with this name!"
 				fi
 				echo " "
-                read -p "Press Enter to return to menu..."
+				read -p "Press Enter to return to menu..."
 				;;
 			4)
 				# In danh sách người dùng có UID > 1000, sử dụng shell /usr/sbin/nologin, trừ người dùng 'nobody'
@@ -118,7 +118,7 @@ if [[ -e /etc/sockd.conf ]]; then
 
 				echo "All specified users have been deleted."
 				echo " "
-                read -p "Press Enter to return to menu..."
+				read -p "Press Enter to return to menu..."
 				;;
 			5)
 				# Lấy thông tin tốc độ hiện tại
@@ -150,7 +150,7 @@ if [[ -e /etc/sockd.conf ]]; then
 				# Thông báo giới hạn mới đã được áp dụng
 				echo "Traffic limit updated to ${newlimit}Mbps"
 				echo " "
-                read -p "Press Enter to return to menu..."
+				read -p "Press Enter to return to menu..."
 				;;
 			6)
 				echo " "
@@ -196,12 +196,12 @@ if [[ -e /etc/sockd.conf ]]; then
 				echo "Deleted user: $user"
 				done
 				
-				echo " "				
-                read -p "Press Enter to return to menu..."
+				echo " "
+				read -p "Press Enter to return to menu..."
 				;;
 			7)
 				# Just exit this script
-                echo "Exiting..."
+				echo "Exiting..."
 				exit 0
 				;;
 		esac
