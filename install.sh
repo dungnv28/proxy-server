@@ -131,28 +131,28 @@ if [[ -e /etc/sockd.conf ]]; then
 				exit
 				;;
 			5)
-                # Change proxy speed limit
-                echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
-                read -p "New limit: " newlimit
-
-                # Remove existing traffic control settings
-                tc qdisc del dev $interface root
-
-                # Apply new traffic control settings with the specified limit
-                tc qdisc add dev $interface root handle 1: htb default 30
-                tc class add dev $interface parent 1: classid 1:1 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-                tc class add dev $interface parent 1:1 classid 1:30 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-
-                # Apply filter for traffic control
-                tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
-                tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
-
-                echo "Traffic limit updated to ${newlimit}Mbps"
-                ;;
-			;;
+		                # Change proxy speed limit
+		                echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
+		                read -p "New limit: " newlimit
+		
+		                # Remove existing traffic control settings
+		                tc qdisc del dev $interface root
+		
+		                # Apply new traffic control settings with the specified limit
+		                tc qdisc add dev $interface root handle 1: htb default 30
+		                tc class add dev $interface parent 1: classid 1:1 htb rate ${newlimit}mbit ceil ${newlimit}mbit
+		                tc class add dev $interface parent 1:1 classid 1:30 htb rate ${newlimit}mbit ceil ${newlimit}mbit
+		
+		                # Apply filter for traffic control
+		                tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
+		                tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
+		
+		                echo "Traffic limit updated to ${newlimit}Mbps"
+		                ;;
 			6)
 				# Just exit this script
-				exit;;
+				exit
+    				;;
 		esac
 	done
 else
