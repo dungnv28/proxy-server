@@ -94,6 +94,9 @@ if [[ -e /etc/sockd.conf ]]; then
 				read -p "Press Enter to return to menu..."
 				;;
 			3)
+				echo "Current proxy user:"				
+				# Hiển thị danh sách người dùng được thêm vào hệ thống cho proxy
+				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd
 				# Deleting an existing user
 				read -p "Please enter the name of the user to delete: " deluser
 				echo " "
