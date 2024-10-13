@@ -49,6 +49,9 @@ if [[ -e /etc/sockd.conf ]]; then
 				# Hiển thị danh sách người dùng được thêm vào hệ thống cho proxy
 				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd
 				echo " "
+				
+				# Dừng lại cho tới khi người dùng nhấn Enter để tiếp tục
+				read -p "Press Enter to continue..."
 				;;
 			2)
 				# Creating new user for proxy
@@ -77,7 +80,6 @@ if [[ -e /etc/sockd.conf ]]; then
 				useradd -M -s /usr/sbin/nologin -p "$(openssl passwd -1 "$passwordnew")" "$usernew"
 				echo " "
 				echo "New user added!"
-				exit
 				;;
 			3)
 				# Deleting an existing user
@@ -89,7 +91,6 @@ if [[ -e /etc/sockd.conf ]]; then
 				else
 					echo "Cannot find user with this name!"
 				fi
-				exit
 				;;
 			4)
 				# In danh sách người dùng có UID > 1000, sử dụng shell /usr/sbin/nologin, trừ người dùng 'nobody'
@@ -186,8 +187,6 @@ if [[ -e /etc/sockd.conf ]]; then
 				userdel -r "$user"
 				echo "Deleted user: $user"
 				done
-
-				exit
 				;;
 			7)
 				# Just exit this script
