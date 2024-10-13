@@ -198,14 +198,17 @@ else
 	done
 	echo " "
 
-	# Hỏi người dùng về giới hạn băng thông (Mbps)
-	read -p "Please enter the bandwidth limit in Mbps (e.g., 100 for 100Mbps): " limit
+    # Hỏi người dùng về giới hạn băng thông (Mbps) và kiểm tra đầu vào
+    while true; do
+        read -p "Please enter the bandwidth limit in Mbps (e.g., 100 for 100Mbps): " limit
 
-	# Kiểm tra nếu người dùng nhập vào là một số hợp lệ
-	if ! [[ "$limit" =~ ^[0-9]+$ ]]; then
-		echo "Invalid input! Please enter a valid number."
-		exit 1
-	fi
+        # Kiểm tra nếu người dùng nhập vào là một số hợp lệ
+        if [[ "$limit" =~ ^[0-9]+$ ]]; then
+            break
+        else
+            echo "Invalid input! Please enter a valid number."
+        fi
+    done
 	
 	# Generate random username and password for each proxy
 	for i in $(seq 1 $numofproxy); do
@@ -347,22 +350,6 @@ else
 			echo "$hostname:$port:${user[$i]}:${password[$i]}"
 		fi
 	done
-	# Output proxy information to a file
-	# hostname=$(hostname -I | awk '{print $1}')
-	# output_file=~/proxy_info.txt
-	# for i in $(seq 1 $numofproxy); do
-	# 	if [[ -n "${user[$i]}" ]]; then
-	# 		echo "$hostname:$port:${user[$i]}:${password[$i]}" >> "$output_file"
-	# 	fi
-	# done
-	# cat "$output_file"
-
-	# # Transfer the file to a remote machine (replace with your own details)
-	# remote_user="root"
-	# remote_host="192.168.0.196"
-	# remote_path="/root/"
-
-	# scp "$output_file" "$remote_user@$remote_host:$remote_path"
 
 	# Print success message
 	echo "All Done and Success by ThienTranJP"
