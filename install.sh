@@ -51,7 +51,7 @@ if [[ -e /etc/sockd.conf ]]; then
 		echo "	5) Thay đổi giới hạn tốc độ proxy"
 		echo "	6) Xóa toàn bộ cấu hình server proxy & user"
 		echo "	7) Exit"
-		read -p "Select an option [1-4]: " option
+		read -p "Select an option [1-7]: " option
 		case $option in
 			1)
 				echo "Current proxy list:"
@@ -133,7 +133,7 @@ if [[ -e /etc/sockd.conf ]]; then
 			5)
 				
 				# Lấy thông tin tốc độ hiện tại
-				current_limit=$(tc class show dev $interface | grep "class htb 1:1" | awk '{print $5}')
+				current_limit=$(tc -s class show dev $interface | grep "class htb 1:1" | grep -oP 'rate \K[0-9]+[a-zA-Z]+')
 
 				# Nếu không có tốc độ hiện tại, gán giá trị mặc định
 				if [[ -z "$current_limit" ]]; then
