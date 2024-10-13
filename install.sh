@@ -43,12 +43,14 @@ if [[ -e /etc/sockd.conf ]]; then
 		read -p "Select an option [1-4]: " option
 		case $option in
 			1)
-				hostname=$(hostname -I | awk '{print $1}')
-				for i in $(seq 1 $numofproxy); do
-					if [[ -n "${user[$i]}" ]]; then
-						echo "$hostname:$port:${user[$i]}:${password[$i]}"
-					fi
-				done
+				echo "Current proxy list:"
+				
+				# Trích xuất các user có trong hệ thống được cấu hình cho Dante Proxy
+				grep 'user.unprivileged' /etc/sockd.conf > /dev/null 2>&1
+				
+				# Hiển thị danh sách người dùng được thêm vào hệ thống cho proxy
+				awk -F: '/\/usr\/sbin\/nologin/ {print $1}' /etc/passwd
+				echo " "
 				;;
 			2)
 				# Creating new user for proxy
@@ -131,28 +133,28 @@ if [[ -e /etc/sockd.conf ]]; then
 				exit
 				;;
 			5)
-		                # Change proxy speed limit
-		                echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
-		                read -p "New limit: " newlimit
-		
-		                # Remove existing traffic control settings
-		                tc qdisc del dev $interface root
-		
-		                # Apply new traffic control settings with the specified limit
-		                tc qdisc add dev $interface root handle 1: htb default 30
-		                tc class add dev $interface parent 1: classid 1:1 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-		                tc class add dev $interface parent 1:1 classid 1:30 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-		
-		                # Apply filter for traffic control
-		                tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
-		                tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
-		
-		                echo "Traffic limit updated to ${newlimit}Mbps"
-		                ;;
+				# Change proxy speed limit
+				echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
+				read -p "New limit: " newlimit
+
+				# Remove existing traffic control settings
+				tc qdisc del dev $interface root
+
+				# Apply new traffic control settings with the specified limit
+				tc qdisc add dev $interface root handle 1: htb default 30
+				tc class add dev $interface parent 1: classid 1:1 htb rate ${newlimit}mbit ceil ${newlimit}mbit
+				tc class add dev $interface parent 1:1 classid 1:30 htb rate ${newlimit}mbit ceil ${newlimit}mbit
+
+				# Apply filter for traffic control
+				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
+				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
+
+				echo "Traffic limit updated to ${newlimit}Mbps"
+				;;
 			6)
 				# Just exit this script
 				exit
-    				;;
+				;;
 		esac
 	done
 else
