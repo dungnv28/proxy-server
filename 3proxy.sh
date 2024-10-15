@@ -41,7 +41,7 @@ if [[ "$OStype" = 'deb' ]]; then
 	wget https://github.com/z3APA3A/3proxy/archive/refs/tags/0.9.4.tar.gz
 	tar xzf 0.9.4.tar.gz && cd 3proxy-0.9.4
 	make -f Makefile.Linux
-	cp src/3proxy /usr/local/bin/
+	cp bin/3proxy /usr/local/bin/
 else
 	yum -y install epel-release
 	yum -y install openssl make gcc
@@ -49,7 +49,7 @@ else
 	wget https://github.com/z3APA3A/3proxy/archive/refs/tags/0.9.4.tar.gz
 	tar xzf 0.9.4.tar.gz && cd 3proxy-0.9.4
 	make -f Makefile.Linux
-	cp src/3proxy /usr/local/bin/
+	cp bin/3proxy /usr/local/bin/
 fi
 
 # Yêu cầu nhập số lượng proxy và giới hạn băng thông
