@@ -33,6 +33,9 @@ else
 	exit 4
 fi
 
+# Tạo thư mục cấu hình 3proxy nếu chưa tồn tại
+mkdir -p /etc/3proxy
+
 # Cài đặt các yêu cầu cơ bản và 3proxy
 if [[ "$OStype" = 'deb' ]]; then
 	apt-get update
@@ -119,7 +122,10 @@ systemctl daemon-reload
 systemctl enable 3proxy
 systemctl start 3proxy
 
-# Áp dụng giới hạn băng thông
+# Xóa cấu hình tc hiện tại trước khi thiết lập giới hạn băng thông
+sudo tc qdisc del dev $interface root 2> /dev/null
+
+# Áp dụng giới hạn băng thông mới
 tc qdisc add dev $interface root handle 1: htb default 30
 tc class add dev $interface parent 1: classid 1:1 htb rate ${limit}mbit ceil ${limit}mbit
 tc class add dev $interface parent 1:1 classid 1:30 htb rate ${limit}mbit ceil ${limit}mbit
@@ -130,6 +136,4 @@ tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.
 hostname=$(hostname -I | awk '{print $1}')
 echo "Proxy list (SOCKS5 and HTTP in format IP:PORT:LOGIN:PASS):"
 for i in $(seq 1 $numofproxy); do
-	echo "$hostname:$socks_port:${user[$i]}:${password[$i]} (SOCKS5)"
-	echo "$hostname:$http_port:${user[$i]}:${password[$i]} (HTTP)"
-done
+	echo "$hostname:$socks_port:${user[$i]}:${password[$i]} (SOCKS5
