@@ -131,7 +131,7 @@ Description=3proxy Socks5 and HTTP Proxy
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/3proxy /etc/3proxy/3proxy.cfg
+ExecStart=/etc/3proxy/3proxy /etc/3proxy/3proxy.cfg
 Restart=on-failure
 
 [Install]
