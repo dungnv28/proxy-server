@@ -95,10 +95,11 @@ EOF
 
 # Thêm proxy socks và HTTP cho mỗi người dùng
 for i in $(seq 1 $numofproxy); do
-    cat >> /etc/3proxy/3proxy.cfg <<-EOF
+    echo "Adding user ${user[$i]} to 3proxy configuration..."
+    cat <<EOF >> /etc/3proxy/3proxy.cfg
 users ${user[$i]}:CL:${password[$i]}
-socks -p$socks_port -i0.0.0.0 -e$interface
 proxy -p$http_port -i0.0.0.0 -e$interface
+socks -p$socks_port -i0.0.0.0 -e$interface
 allow ${user[$i]}
 EOF
 done
