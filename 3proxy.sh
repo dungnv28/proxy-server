@@ -86,23 +86,43 @@ done
 
 # Tạo tệp cấu hình 3proxy
 cat > /etc/3proxy/3proxy.cfg <<-EOF
+# Specify valid name servers. You can locate them on your VPS in /etc/resolv.conf
 nserver 8.8.8.8
 nserver 8.8.4.4
+nserver 1.1.1.1
+nserver 1.0.0.1
+nscache 65536
 timeouts 1 5 30 60 180 1800 15 60
-log /var/log/3proxy.log D
-auth strong
+daemon
+log /var/log/3proxy/3proxy.log
+logformat "- +_L%t.%. %N.%p %E %U %C:%c %R:%r %O %I %h %T"
+archiver gz /usr/bin/gzip %F
+rotate 1
+authcache user 60
+auth strong cache
+deny * * 127.0.0.0/8,192.168.1.1
+allow * * * 80-88,8080-8088 HTTP
+allow * * * 443,8443 HTTPS
 EOF
 
 # Thêm proxy socks và HTTP cho mỗi người dùng
 for i in $(seq 1 $numofproxy); do
-    echo "Adding user ${user[$i]} to 3proxy configuration..."
-    cat <<EOF >> /etc/3proxy/3proxy.cfg
+    cat >> /etc/3proxy/3proxy.cfg <<-EOF
 users ${user[$i]}:CL:${password[$i]}
 proxy -p$http_port -i0.0.0.0 -e$interface
 socks -p$socks_port -i0.0.0.0 -e$interface
 allow ${user[$i]}
 EOF
 done
+
+# Thêm cấu hình cho admin web UI
+cat >> /etc/3proxy/3proxy.cfg <<-EOF
+flush
+auth iponly
+allow * * 127.0.0.1
+allow admin * 10.0.0.0/8
+admin -p2525
+EOF
 
 # Khởi tạo dịch vụ systemd cho 3proxy
 cat > /etc/systemd/system/3proxy.service <<-EOF
@@ -111,7 +131,7 @@ Description=3proxy Socks5 and HTTP Proxy
 After=network.target
 
 [Service]
-ExecStart=/etc/3proxy/3proxy /etc/3proxy/3proxy.cfg
+ExecStart=/usr/local/bin/3proxy /etc/3proxy/3proxy.cfg
 Restart=on-failure
 
 [Install]
