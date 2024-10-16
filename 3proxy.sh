@@ -35,6 +35,7 @@ fi
 
 # Tạo thư mục cấu hình 3proxy nếu chưa tồn tại
 mkdir -p /etc/3proxy
+mkdir -p /var/log/3proxy/
 
 # Cài đặt các yêu cầu cơ bản và 3proxy
 if [[ "$OStype" = 'deb' ]]; then
