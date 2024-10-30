@@ -36,6 +36,7 @@ else
 	echo "Interface does not exist."
 fi
 
+hostname=$(hostname -I | awk '{print $1}')
 
 # Checking for previous installation with this script
 if [[ -e /etc/sockd.conf ]]; then
@@ -46,11 +47,12 @@ if [[ -e /etc/sockd.conf ]]; then
 		echo "What do you want to do now?"
 		echo "	1) Xem danh sách proxy hiện có"
 		echo "	2) Thêm một proxy user mới"
-		echo "	3) Xóa một proxy user"
-		echo "	4) Xóa toàn bộ proxy user"
-		echo "	5) Thay đổi giới hạn tốc độ proxy"
-		echo "	6) Xóa toàn bộ cấu hình server proxy & user"
-		echo "	7) Exit"
+		echo "	3) Thêm ngẫu nhiên nhiều proxy"
+		echo "	4) Xóa một proxy user"
+		echo "	5) Xóa toàn bộ proxy user"
+		echo "	6) Thay đổi giới hạn tốc độ proxy"
+		echo "	7) Xóa toàn bộ cấu hình server proxy & user"
+		echo "	8) Exit"
 		read -p "Select an option [1-7]: " option
 		case $option in
 			1)
@@ -94,6 +96,32 @@ if [[ -e /etc/sockd.conf ]]; then
 				read -p "Press Enter to return to menu..."
 				;;
 			3)
+				read -p "Số lượng proxy muốn thêm ngẫu nhiên: " num
+				read -p "Cổng Port bạn đã nhập lúc setup(được lưu ở file /etc/sockd.conf): " port
+				echo "Thêm $num proxy ngẫu nhiên"
+				
+				for i in $(seq 1 $num); do
+					# Tạo user ngẫu nhiên với 5 ký tự (gồm a-z, A-Z, 0-9)
+					user="user_$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 5 | head -n 1)"
+					
+					# Tạo password ngẫu nhiên với 5 ký tự (gồm a-z, A-Z, 0-9)
+					password="pass_$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 5 | head -n 1)"
+					
+					# Thêm user vào hệ thống và lưu vào /etc/passwd với mật khẩu đã mã hóa
+					useradd -M -s /usr/sbin/nologin -p "$(openssl passwd -1 "$password")" "$user"
+					
+					# Lưu format IP:Port:User:Pass vào danh sách proxy
+					proxy_list+="$hostname:$port:$user:$password\n"
+				done
+				
+				echo "Đã thêm $num proxy ngẫu nhiên thành công."
+				
+				# Xuất danh sách proxy ra màn hình
+				echo -e "Danh sách proxy:\n$proxy_list"
+				
+				read -p "Nhấn Enter để quay lại menu chính..."
+				;;
+			4)
 				echo "Current proxy user:"				
 				# Hiển thị danh sách người dùng được thêm vào hệ thống cho proxy
 				awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd
@@ -109,7 +137,7 @@ if [[ -e /etc/sockd.conf ]]; then
 				echo " "
 				read -p "Press Enter to return to menu..."
 				;;
-			4)
+			5)
 				# In danh sách người dùng có UID > 1000, sử dụng shell /usr/sbin/nologin, trừ người dùng 'nobody'
 				echo "The following users have UID > 1000, use /usr/sbin/nologin, and will be deleted (excluding 'nobody'):"
 
@@ -133,40 +161,109 @@ if [[ -e /etc/sockd.conf ]]; then
 				echo " "
 				read -p "Press Enter to return to menu..."
 				;;
-			5)
-				
-				# Lấy thông tin tốc độ hiện tại
-				current_limit=$(tc -s class show dev $interface | grep "class htb 1:1" | grep -oP 'rate \K[0-9]+[a-zA-Z]+')
+			6)				
+				# Hiển thị danh sách user và giới hạn tốc độ hiện tại
+				echo "Chức năng đang phát triển, vui lòng chờ!"
+				# echo "Current proxy users and their speed limits:"				
+				# for user in $(awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd); do
+				# 	current_limit=$(tc -s class show dev "$interface" | grep -A 1 "class htb 1:${user//[!0-9]/}" | grep -oP 'rate \K[0-9]+[a-zA-Z]+' || echo "No limit")
+				# 	echo "User: $user - Current limit: $current_limit"
+				# done
 
-				# Nếu không có tốc độ hiện tại, gán giá trị mặc định
-				if [[ -z "$current_limit" ]]; then
-					echo "No current speed limit found."
-				else
-					echo "Current proxy speed limit is: $current_limit"
-				fi
+				# # Chọn user để thiết lập giới hạn
+				# echo -e "\nSelect a user to set speed limit:"
+				# users=($(awk -F: '$3 > 1000 && $7 == "/usr/sbin/nologin" && $1 != "nobody" {print $1}' /etc/passwd))
+				# select username in "${users[@]}" "All Users" "Exit"; do
+				# 	case $username in
+				# 		"Exit")
+				# 			echo "Exiting speed limit configuration..."
+				# 			break
+				# 			;;
+				# 		"All Users")
+				# 			echo "Enter new limit in Mbps for all users (e.g., 100 for 100Mbps):"
+				# 			read -p "New limit: " newlimit
+							
+				# 			if [[ ! "$newlimit" =~ ^[0-9]+$ ]]; then
+				# 				echo "Invalid input. Please enter a number."
+				# 				continue
+				# 			fi
+							
+				# 			# Xóa cấu hình traffic control hiện tại
+				# 			tc qdisc del dev "$interface" root 2>/dev/null
+							
+				# 			# Thiết lập root qdisc
+				# 			tc qdisc add dev "$interface" root handle 1: htb default 1
+							
+				# 			# Tạo class chính
+				# 			tc class add dev "$interface" parent 1: classid 1:1 htb rate 1000mbit
+							
+				# 			# Thiết lập giới hạn cho từng user
+				# 			user_id=100
+				# 			for user in "${users[@]}"; do
+				# 				# Tạo class cho user
+				# 				tc class add dev "$interface" parent 1:1 classid 1:$user_id htb rate "${newlimit}mbit" ceil "${newlimit}mbit"
+								
+				# 				# Lấy UID của user
+				# 				uid=$(id -u "$user")
+								
+				# 				# Thiết lập filter cho traffic đi ra
+				# 				tc filter add dev "$interface" protocol ip parent 1: prio 1 \
+				# 					handle "$uid" fw flowid 1:$user_id
+								
+				# 				# Đánh dấu packets với iptables
+				# 				iptables -t mangle -D POSTROUTING -m owner --uid-owner "$uid" -j MARK --set-mark "$uid" 2>/dev/null
+				# 				iptables -t mangle -A POSTROUTING -m owner --uid-owner "$uid" -j MARK --set-mark "$uid"
+								
+				# 				echo "Set $newlimit Mbps limit for user $user"
+				# 				user_id=$((user_id + 1))
+				# 			done
+				# 			echo "Speed limits updated for all users"
+				# 			break
+				# 			;;
+				# 		*)
+				# 			echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
+				# 			read -p "New limit: " newlimit
+							
+				# 			if [[ ! "$newlimit" =~ ^[0-9]+$ ]]; then
+				# 				echo "Invalid input. Please enter a number."
+				# 				continue
+				# 			fi
+							
+				# 			# Nếu chưa có root qdisc, tạo mới
+				# 			if ! tc qdisc show dev "$interface" | grep -q "qdisc htb 1:"; then
+				# 				tc qdisc add dev "$interface" root handle 1: htb default 1
+				# 				tc class add dev "$interface" parent 1: classid 1:1 htb rate 1000mbit
+				# 			fi
+							
+				# 			# Lấy UID của user
+				# 			uid=$(id -u "$username")
+				# 			user_id=$((100 + uid % 1000))
+							
+				# 			# Xóa class cũ nếu tồn tại
+				# 			tc class del dev "$interface" classid 1:$user_id 2>/dev/null
+							
+				# 			# Tạo class mới cho user
+				# 			tc class add dev "$interface" parent 1:1 classid 1:$user_id htb rate "${newlimit}mbit" ceil "${newlimit}mbit"
+							
+				# 			# Thiết lập filter cho traffic
+				# 			tc filter del dev "$interface" protocol ip parent 1: handle "$uid" fw 2>/dev/null
+				# 			tc filter add dev "$interface" protocol ip parent 1: prio 1 \
+				# 				handle "$uid" fw flowid 1:$user_id
+							
+				# 			# Cập nhật iptables rules
+				# 			iptables -t mangle -D POSTROUTING -m owner --uid-owner "$uid" -j MARK --set-mark "$uid" 2>/dev/null
+				# 			iptables -t mangle -A POSTROUTING -m owner --uid-owner "$uid" -j MARK --set-mark "$uid"
+							
+				# 			echo "Speed limit updated to ${newlimit}Mbps for user $username"
+				# 			break
+				# 			;;
+				# 	esac
+				# done
 
-				# Nhập tốc độ giới hạn mới
-				echo "Enter new limit in Mbps (e.g., 100 for 100Mbps):"
-				read -p "New limit: " newlimit
-
-				# Xóa cấu hình traffic control hiện tại
-				tc qdisc del dev $interface root
-
-				# Thiết lập traffic control với giới hạn mới
-				tc qdisc add dev $interface root handle 1: htb default 30
-				tc class add dev $interface parent 1: classid 1:1 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-				tc class add dev $interface parent 1:1 classid 1:30 htb rate ${newlimit}mbit ceil ${newlimit}mbit
-
-				# Áp dụng bộ lọc cho traffic control
-				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
-				tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
-
-				# Thông báo giới hạn mới đã được áp dụng
-				echo "Traffic limit updated to ${newlimit}Mbps"
-				echo " "
-				read -p "Press Enter to return to menu..."
-				;;
-			6)
+				# echo " "
+				# read -p "Press Enter to return to menu..."
+				# ;;
+			7)
 				echo " "
 				read -p "Do you really want to remove Dante socks proxy server? [y/n]: " -e -i n REMOVE
 				if [[ "$REMOVE" = 'y' ]]; then
@@ -213,7 +310,7 @@ if [[ -e /etc/sockd.conf ]]; then
 				echo " "
 				read -p "Press Enter to return to menu..."
 				;;
-			7)
+			8)
 				# Just exit this script
 				echo "Exiting..."
 				exit 0
@@ -261,23 +358,14 @@ else
 		fi
 	done
 	echo " "
-
-    # Hỏi người dùng về giới hạn băng thông (Mbps) và kiểm tra đầu vào
-    while true; do
-        read -p "Please enter the bandwidth limit in Mbps (e.g., 100 for 100Mbps): " limit
-
-        # Kiểm tra nếu người dùng nhập vào là một số hợp lệ
-        if [[ "$limit" =~ ^[0-9]+$ ]]; then
-            break
-        else
-            echo "Invalid input! Please enter a valid number."
-        fi
-    done
 	
 	# Generate random username and password for each proxy
 	for i in $(seq 1 $numofproxy); do
-		user[$i]=$(openssl rand -base64 8 | tr -dc 'a-zA-Z' | head -c 8)
-		password[$i]=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9' | head -c 12)
+		# Tạo user ngẫu nhiên với 4 ký tự (gồm a-z, A-Z, 0-9)
+		user[$i]="user_$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 5 | head -n 1)"
+		
+		# Tạo password ngẫu nhiên với 4 ký tự (gồm a-z, A-Z, 0-9)
+		password[$i]="pass_$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 5 | head -n 1)"
 	done
 
 	# Installing minimal requirements
@@ -394,36 +482,27 @@ else
 		# Starting service
 		systemctl start sockd
 	fi
+	
+	# install zip
+	sudo apt-get install zip -y
 
-	# Set up traffic control (tc) for bandwidth limitation với limit người dùng nhập vào
-	tc qdisc add dev $interface root handle 1: htb default 30
-	tc class add dev $interface parent 1: classid 1:1 htb rate ${limit}mbit ceil ${limit}mbit
-	tc class add dev $interface parent 1:1 classid 1:30 htb rate ${limit}mbit ceil ${limit}mbit
-
-	# Giới hạn toàn bộ traffic qua $interface với giá trị $limit Mbps
-	tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip src 0.0.0.0/0 flowid 1:30
-	tc filter add dev $interface protocol ip parent 1:0 prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:30
-
-	# In ra thông báo xác nhận giới hạn băng thông đã được thiết lập
-	echo "Traffic control applied, limiting to ${limit}Mbps for upload and download"
+	# install jq
+	sudo apt-get install jq -y
 
 	# Tạo tệp proxy với định dạng IP:PORT:LOGIN:PASS
 	gen_proxy_file_for_user() {
 		# Sử dụng một vòng lặp thông thường và redirect đầu ra vào tệp proxy.txt
 		> proxy.txt  # Tạo hoặc làm trống tệp proxy.txt nếu nó đã tồn tại
+		# Output proxy
+		echo "Proxy list (IP:PORT:LOGIN:PASS):"
 		for i in $(seq 1 $numofproxy); do
 			echo "$hostname:$port:${user[$i]}:${password[$i]}" >> proxy.txt
+			echo "$hostname:$port:${user[$i]}:${password[$i]}"
 		done
 	}
 
-	
-	install_zip_jq() {
-		# install zip
-		sudo apt-get install zip -y
-
-		# install jq
-		sudo apt-get install jq -y
-	}
+	# Xuất proxy list ra console & ghi file
+	gen_proxy_file_for_user
 
 	# Nén tệp proxy và upload lên download server
 	upload_2file() {
@@ -437,20 +516,8 @@ else
 		echo "Password: ${PASS}"
 	}
 
-	# Sau khi tạo người dùng proxy xong
-
-	# Output proxy list to console
-	hostname=$(hostname -I | awk '{print $1}')
-	echo "Proxy list (IP:PORT:LOGIN:PASS):"
-	for i in $(seq 1 $numofproxy); do
-		if [[ -n "${user[$i]}" ]]; then
-			echo "$hostname:$port:${user[$i]}:${password[$i]}"
-		fi
-	done
-
-	# Tạo và upload tệp proxy
-	gen_proxy_file_for_user
-	install_zip_jq && upload_2file
+ 	# Upload tệp proxy
+ 	upload_2file
 
 	# Print success message
 	echo "All Done and Success by ThienTranJP"
