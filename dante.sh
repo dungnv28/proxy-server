@@ -262,7 +262,7 @@ if [[ -e /etc/sockd.conf ]]; then
 
 				# echo " "
 				# read -p "Press Enter to return to menu..."
-				# ;;
+				;;
 			7)
 				echo " "
 				read -p "Do you really want to remove Dante socks proxy server? [y/n]: " -e -i n REMOVE
